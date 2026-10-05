@@ -1,0 +1,10 @@
+{
+  "name": "minecraft2d",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler pages deploy . --project-name=minecraft2d"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

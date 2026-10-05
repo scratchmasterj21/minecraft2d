@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #f87171;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(248, 113, 113, 0.3);
+        }
+
+        .reason-box {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            border-radius: 10px;
+            padding: 15px 25px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .reason-label {
+            color: #f87171;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .reason-text {
+            color: #fca5a5;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .schedule-box {
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 10px;
+            padding: 20px 25px;
+            margin-top: 20px;
+        }
+
+        .schedule-text {
+            color: #94a3b8;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid rgba(74, 222, 128, 0.4);
+            border-radius: 8px;
+            color: #4ade80;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(74, 222, 128, 0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🚫</div>
+        <h1>Access Denied</h1>
+        
+        <div class="reason-box" id="reason-box">
+            <div class="reason-label">Reason</div>
+            <div class="reason-text" id="reason-text"></div>
+        </div>
+
+        <div class="schedule-box">
+            <div class="schedule-text">
+                Please message your teacher if you have any questions.
+            </div>
+        </div>
+
+        <a href="/" class="back-btn">🔄 Try Again</a>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const reason = urlParams.get('reason');
+
+        if (reason) {
+            const reasonBox = document.getElementById('reason-box');
+            const reasonText = document.getElementById('reason-text');
+            reasonBox.style.display = 'block';
+            reasonText.textContent = decodeURIComponent(reason);
+        }
+    </script>
+</body>
+</html>

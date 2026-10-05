@@ -1,0 +1,3 @@
+# Cloudflare Pages — static site (no Worker)
+name = "minecraft2d"
+pages_build_output_dir = "."

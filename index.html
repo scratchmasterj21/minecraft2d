@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <meta name="description" content="Play Minecraft 2D in your browser" />
+    <title>Minecraft 2D</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #0f1419;
+        color: #e8eaed;
+      }
+
+      #login {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1a1a2e, #16213e 50%, #0f3460);
+      }
+
+      .card {
+        padding: 38px 48px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        color: #fff;
+      }
+
+      .card h1 {
+        margin: 0 0 8px;
+        color: #4ade80;
+        font-size: 1.75rem;
+        font-weight: 600;
+      }
+
+      .sub {
+        color: #94a3b8;
+        margin: 0 0 22px;
+      }
+
+      .badge {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 7px 14px;
+        border: 1px solid rgba(74, 222, 128, 0.33);
+        border-radius: 8px;
+        color: #4ade80;
+        background: rgba(74, 222, 128, 0.08);
+      }
+
+      #google {
+        margin: auto;
+      }
+
+      .status {
+        display: none;
+        margin-top: 18px;
+        color: #60a5fa;
+      }
+
+      .error {
+        display: none;
+        max-width: 320px;
+        margin-top: 18px;
+        padding: 10px;
+        border: 1px solid rgba(248, 113, 113, 0.33);
+        border-radius: 8px;
+        background: rgba(248, 113, 113, 0.08);
+        color: #f87171;
+      }
+
+      #game {
+        display: none;
+        min-height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1.5rem;
+      }
+
+      #game.visible {
+        display: flex;
+      }
+
+      #game .title {
+        margin: 0;
+        font-size: clamp(1.25rem, 3vw, 1.75rem);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .player-wrap {
+        width: min(100%, 482px);
+        line-height: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .player-wrap iframe {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 482 / 412;
+        border: 0;
+        color-scheme: auto;
+      }
+
+      .controls {
+        width: min(100%, 482px);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .controls h2 {
+        margin: 0 0 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #94a3b8;
+      }
+
+      .controls-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem 1.25rem;
+        margin: 0;
+        font-size: 0.8125rem;
+        line-height: 1.45;
+        color: #cbd5e1;
+      }
+
+      .controls-grid .full {
+        grid-column: 1 / -1;
+      }
+
+      .controls-grid p {
+        margin: 0;
+      }
+
+      .controls-grid .keys {
+        font-weight: 500;
+        margin-right: 0.35rem;
+      }
+
+      .controls kbd {
+        display: inline-block;
+        padding: 0.1rem 0.35rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.35);
+        font-family: inherit;
+        font-size: 0.75rem;
+        color: #e2e8f0;
+      }
+
+      @media (max-width: 520px) {
+        .controls-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .controls-grid .full {
+          grid-column: auto;
+        }
+      }
+
+      .save-note {
+        width: min(100%, 482px);
+        padding: 0.85rem 1rem;
+        border-radius: 8px;
+        background: rgba(74, 222, 128, 0.06);
+        border: 1px solid rgba(74, 222, 128, 0.22);
+        font-size: 0.8125rem;
+        line-height: 1.55;
+        color: #cbd5e1;
+      }
+
+      .save-note h2 {
+        margin: 0 0 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #4ade80;
+      }
+
+      .save-note .signed-in {
+        margin: 0 0 0.65rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.25);
+        color: #94a3b8;
+        font-size: 0.75rem;
+      }
+
+      .save-note .signed-in strong {
+        color: #e2e8f0;
+        font-weight: 500;
+      }
+
+      .save-note p {
+        margin: 0 0 0.65rem;
+      }
+
+      .save-note ol {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      .save-note li {
+        margin-bottom: 0.35rem;
+      }
+
+      .save-note li:last-child {
+        margin-bottom: 0;
+      }
+
+      .save-note kbd {
+        display: inline-block;
+        padding: 0.1rem 0.35rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.35);
+        font-family: inherit;
+        font-size: 0.75rem;
+        color: #e2e8f0;
+      }
+
+      .save-doc-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0.75rem 0;
+      }
+
+      .doc-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .doc-btn.primary {
+        border-color: rgba(74, 222, 128, 0.45);
+        background: rgba(74, 222, 128, 0.15);
+        color: #4ade80;
+      }
+
+      .doc-btn:hover {
+        filter: brightness(1.08);
+      }
+
+      .doc-embed-wrap {
+        margin-top: 0.5rem;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #fff;
+        line-height: 0;
+      }
+
+      .doc-embed-wrap iframe {
+        display: block;
+        width: 100%;
+        height: 280px;
+        border: 0;
+      }
+
+      .doc-embed-hint {
+        margin: 0.5rem 0 0;
+        font-size: 0.75rem;
+        color: #94a3b8;
+      }
+    </style>
+    <script>
+      "use strict";
+
+      const CONFIG = {
+        GOOGLE_CLIENT_ID:
+          "313123590702-lb7fjsbbqt83t3ljocvpf5la58uqmir4.apps.googleusercontent.com",
+        WORKER_URL: "https://checkaccess.carlo587-jcl.workers.dev",
+        APP_ID: "minecraft2d",
+        ALLOWED_DOMAIN: "felice.ed.jp",
+        // Optional: full Google Doc URL or document ID to embed below (preview mode).
+        // Use a teacher instructions doc, or leave "" — students should use "Create my save Doc"
+        // for private saves (one shared editable doc would show everyone's strings).
+        SAVE_DOC_EMBED: "",
+      };
+
+      const EMBED_URL =
+        "https://turbowarp.org/1112518406/embed?fullscreen-background=%230f1419";
+
+      let idToken = null;
+      let sessionToken = null;
+      let signedInEmail = null;
+      let started = false;
+      let checking = false;
+      let revoked = false;
+      let recheckTimer = null;
+      let deadline = null;
+      let deadlineTimer = null;
+
+      function status(show) {
+        document.getElementById("status").style.display = show ? "block" : "none";
+      }
+
+      function error(message) {
+        const el = document.getElementById("error");
+        el.textContent = message;
+        el.style.display = "block";
+        status(false);
+      }
+
+      function decodeJwt(token) {
+        const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+        return JSON.parse(
+          decodeURIComponent(
+            atob(part)
+              .split("")
+              .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+              .join("")
+          )
+        );
+      }
+
+      function initLogin() {
+        if (!window.google) {
+          setTimeout(initLogin, 100);
+          return;
+        }
+        google.accounts.id.initialize({
+          client_id: CONFIG.GOOGLE_CLIENT_ID,
+          callback: onLogin,
+          auto_select: true,
+          cancel_on_tap_outside: false,
+        });
+        google.accounts.id.renderButton(document.getElementById("google"), {
+          theme: "filled_blue",
+          size: "large",
+          text: "signin_with",
+          shape: "rectangular",
+          width: 280,
+        });
+        google.accounts.id.prompt();
+      }
+
+      async function onLogin(response) {
+        status(true);
+        document.getElementById("error").style.display = "none";
+        try {
+          const profile = decodeJwt(response.credential);
+          if (!profile.email || !profile.email.endsWith("@" + CONFIG.ALLOWED_DOMAIN)) {
+            error("Only @" + CONFIG.ALLOWED_DOMAIN + " accounts are allowed");
+            return;
+          }
+          idToken = response.credential;
+          signedInEmail = profile.email;
+          const decision = await checkAccess();
+          if (decision.allowed) {
+            applyAccess(decision);
+            document.getElementById("login").remove();
+            if (!started) {
+              started = true;
+              startGame();
+            }
+            startWatchers();
+          } else {
+            deny(decision.reason || decision.message || "Access denied");
+          }
+        } catch (ex) {
+          console.error(ex);
+          error("Sign-in failed. Please try again.");
+        }
+      }
+
+      async function checkAccess() {
+        const payload = sessionToken
+          ? { sessionToken, appId: CONFIG.APP_ID }
+          : {
+              idToken,
+              appId: CONFIG.APP_ID,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            };
+        const response = await fetch(CONFIG.WORKER_URL + "/check-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        let result = {};
+        try {
+          result = await response.json();
+        } catch (ex) {
+          throw new Error("Invalid access response");
+        }
+        if (!response.ok && result.allowed !== false) {
+          throw new Error(result.message || "Could not verify access");
+        }
+        return result;
+      }
+
+      function applyAccess(result) {
+        if (result.sessionToken) sessionToken = result.sessionToken;
+        deadline = null;
+        if (Number.isFinite(result.playtimeExpiresAtMs)) {
+          deadline = result.playtimeExpiresAtMs;
+        } else if (Number.isFinite(result.timeRemainingSeconds)) {
+          deadline = Date.now() + Math.max(0, result.timeRemainingSeconds) * 1000;
+        }
+      }
+
+      function deny(reason) {
+        if (revoked) return;
+        revoked = true;
+        clearInterval(recheckTimer);
+        clearInterval(deadlineTimer);
+        location.href = "/closed.html?reason=" + encodeURIComponent(reason || "Access denied");
+      }
+
+      function startWatchers() {
+        recheckTimer = setInterval(async () => {
+          if (checking || revoked) return;
+          checking = true;
+          try {
+            const r = await checkAccess();
+            if (r.allowed) applyAccess(r);
+            else deny(r.reason);
+          } catch (ex) {
+            console.warn(ex);
+          } finally {
+            checking = false;
+          }
+        }, 60000);
+
+        deadlineTimer = setInterval(() => {
+          if (deadline !== null && Date.now() >= deadline) {
+            deny("Daily playtime limit reached.");
+          }
+        }, 5000);
+      }
+
+      function googleDocId(value) {
+        const text = String(value || "").trim();
+        if (!text) return null;
+        const match = text.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) return match[1];
+        if (/^[a-zA-Z0-9_-]{20,}$/.test(text)) return text;
+        return null;
+      }
+
+      function initSaveDocEmbed() {
+        const hint = document.getElementById("doc-embed-hint");
+        const wrap = document.getElementById("doc-embed-wrap");
+        const docFrame = document.getElementById("save_doc_frame");
+        const openTab = document.getElementById("doc-open-tab");
+        const docId = googleDocId(CONFIG.SAVE_DOC_EMBED);
+
+        if (docId) {
+          const editUrl = "https://docs.google.com/document/d/" + docId + "/edit";
+          docFrame.src = "https://docs.google.com/document/d/" + docId + "/preview";
+          openTab.href = editUrl;
+          openTab.hidden = false;
+          wrap.hidden = false;
+          hint.textContent =
+            "Embedded Doc preview (same browser session as your school Google login). " +
+            "If you cannot type here, use Open in Google Docs. For save strings, prefer Create my save Doc so only you can see them.";
+        } else {
+          hint.textContent =
+            "Use Create my save Doc — it opens a new Doc in your Google Drive while you stay signed in. " +
+            "Paste each save string there after you press O in the game.";
+        }
+      }
+
+      function startGame() {
+        const game = document.getElementById("game");
+        const frame = document.getElementById("game_frame");
+        frame.src = EMBED_URL;
+        game.classList.add("visible");
+        const signedIn = document.getElementById("save-signed-in");
+        if (signedIn && signedInEmail) {
+          signedIn.innerHTML =
+            "Signed in with Google: <strong>" + escapeHtml(signedInEmail) + "</strong>";
+        }
+        initSaveDocEmbed();
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      addEventListener("load", initLogin);
+      addEventListener(
+        "beforeunload",
+        () => {
+          clearInterval(recheckTimer);
+          clearInterval(deadlineTimer);
+        },
+        true
+      );
+    </script>
+  </head>
+  <body>
+    <div id="login">
+      <div class="card">
+        <h1>Minecraft 2D</h1>
+        <p class="sub">Sign in with your school account to play</p>
+        <div class="badge">@felice.ed.jp accounts only</div>
+        <div id="google"></div>
+        <div id="status" class="status">Verifying access…</div>
+        <div id="error" class="error"></div>
+      </div>
+    </div>
+
+    <div id="game">
+      <h1 class="title">Minecraft 2D</h1>
+      <div class="player-wrap">
+        <iframe
+          id="game_frame"
+          allowtransparency="true"
+          allowfullscreen
+          scrolling="no"
+          title="Minecraft 2D"
+        ></iframe>
+      </div>
+      <section class="controls" aria-label="Game controls">
+        <h2>Controls</h2>
+        <div class="controls-grid">
+          <p><span class="keys"><kbd>1</kbd>–<kbd>9</kbd></span> Select item</p>
+          <p><span class="keys"><kbd>Click</kbd></span> Place or mine</p>
+          <p><span class="keys"><kbd>WASD</kbd></span> Move / jump</p>
+          <p><span class="keys"><kbd>E</kbd></span> Open / close inventory</p>
+          <p class="full">
+            <span class="keys"><kbd>E</kbd> + hover</span> Open / close chest, crafting table, door
+          </p>
+          <p class="full">
+            <span class="keys"><kbd>Space</kbd></span> Drop single tile from a stack while dragging
+          </p>
+          <p><span class="keys"><kbd>F</kbd></span> Eat food</p>
+          <p><span class="keys"><kbd>N</kbd></span> Label a sign or chest</p>
+          <p><span class="keys"><kbd>Q</kbd></span> Drop item</p>
+          <p><span class="keys"><kbd>P</kbd></span> Pause / unpause</p>
+          <p><span class="keys"><kbd>T</kbd></span> Talk / command</p>
+          <p><span class="keys"><kbd>O</kbd></span> Save your game</p>
+          <p><span class="keys"><kbd>M</kbd></span> Music / sounds</p>
+          <p><span class="keys"><kbd>Shift</kbd></span> Sprint</p>
+        </div>
+      </section>
+      <section class="save-note" aria-label="Saving your world">
+        <h2>Saving your world</h2>
+        <p class="signed-in" id="save-signed-in">Signed in with your school Google account.</p>
+        <p>
+          This game does not save to the cloud by itself. Use your Google account to keep the save
+          string somewhere you can open later (Google Docs, Drive, or Classroom).
+        </p>
+        <ol>
+          <li>
+            Press <kbd>O</kbd> in the game. Double-click the long number in the list, then copy it
+            (<kbd>Ctrl+C</kbd> on Windows, <kbd>⌘C</kbd> on Mac).
+          </li>
+          <li>Paste it into your save Doc (below or in a tab you opened from the button).</li>
+          <li>
+            Next time: choose <strong>Load Game</strong> on the title screen, paste the whole string
+            (<kbd>Ctrl+V</kbd> / <kbd>⌘V</kbd>), and confirm.
+          </li>
+        </ol>
+        <div class="save-doc-actions">
+          <a
+            class="doc-btn primary"
+            id="doc-create"
+            href="https://docs.google.com/document/create?title=Minecraft%202D%20Save"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Create my save Doc</a
+          >
+          <a
+            class="doc-btn"
+            id="doc-open-tab"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            hidden
+            >Open in Google Docs</a
+          >
+        </div>
+        <div class="doc-embed-wrap" id="doc-embed-wrap" hidden>
+          <iframe id="save_doc_frame" title="Google Doc save notebook" loading="lazy"></iframe>
+        </div>
+        <p class="doc-embed-hint" id="doc-embed-hint"></p>
+      </section>
+    </div>
+  </body>
+</html>
